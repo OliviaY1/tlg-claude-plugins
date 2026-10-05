@@ -8,6 +8,8 @@ allowed-tools: mcp__Gmail__search_threads, mcp__Gmail__get_thread, mcp__Gmail__g
 
 All replies to the user are in Simplified Chinese. Keep MAWB numbers, sheet headers, file names and email addresses as written. Never paste raw API output. Never show a key.
 
+**If anything is uncertain, ask the user. Never guess.** This covers every step: whether an email is a pre-alert, which MAWB a follow-up belongs to, whether a follow-up changes data, the client name, any must-have value. Ask all open questions together, in one message.
+
 ## Modes
 
 | Mode | Trigger | Writes |
