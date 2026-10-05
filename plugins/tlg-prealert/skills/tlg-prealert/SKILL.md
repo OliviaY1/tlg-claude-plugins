@@ -25,6 +25,12 @@ If the request is ambiguous, use Check mode.
 3. Look for keys only in the folder `keyFolderId`. Download no file other than the two names in `config.json`.
 4. Call the APIs only through `scripts/tlg_api.py` (see `reference/api.md`). In Check mode always pass `--read-only`.
 
+## Step 0: the tab
+
+- All pre-alert rows live in one tab. Use that tab for the lookup and for inserting.
+- Take it from the request or the command arguments, e.g. `/tlg-prealert:check-prealerts 1 "2026. JUN 大贸 空运"` (number = days, quoted text = tab).
+- If no tab was given, ask for it first, before reading any email.
+
 ## Step 1: find pre-alerts
 
 - Days: what the user said ("最近 7 天" → 7), else `defaultDays`.
@@ -41,7 +47,8 @@ For each MAWB:
 
 ## Step 3: is it in the sheet?
 
-- `listTabs`, then `lookup` with every MAWB over all tabs (or the tab the user named). Tabs without a MAWB column come back in `skippedTabs`; ignore them.
+- One `lookup` call: `tab` = the chosen tab, `keys` = every MAWB. Don't call `listTabs`.
+- Only if the result has `skippedTabs` (tab name wrong, or no MAWB column): call `listTabs` once, show the tab names, and ask the user to pick.
 
 ## Step 4: flags (⚠️)
 
@@ -56,11 +63,11 @@ Flags go first in the report. Changing existing rows is rare; make each flag say
 
 ## Check mode: stop here
 
-Report with `reference/report-zh.md` (check sections only). End with: "要录入请说：把预报录到 <tab>".
+Report with `reference/report-zh.md` (check sections only). End with the entry command for the same tab, e.g. `要录入请说：/tlg-prealert:prealert-to-sheet "2026. JUN 大贸 空运"`.
 
 ## Entry mode
 
-1. The user must name the tab. If not, `listTabs` and ask which one.
+1. Use the tab from Step 0.
 2. Candidates = shipments not in the sheet and not flagged. Flagged and existing ones are never written; list them in the report.
 3. **Entry**: show the candidate list (report format) and wait for the user to confirm which to enter. **One-shot**: don't wait.
 4. For each confirmed shipment:
