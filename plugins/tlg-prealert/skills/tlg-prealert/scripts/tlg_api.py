@@ -11,6 +11,8 @@ Delete actions are refused. --read-only also refuses every write.
 """
 import json
 import sys
+import urllib.error
+import urllib.parse
 import urllib.request
 
 READ = {
@@ -26,6 +28,26 @@ WRITE = {
 def fail(msg):
     print(json.dumps({'ok': False, 'error': msg}, ensure_ascii=False))
     sys.exit(1)
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def post(url, data):
+    """POST, then follow Apps Script's 302 with a plain GET (the result lives at the Location)."""
+    opener = urllib.request.build_opener(NoRedirect)
+    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+    for _ in range(5):
+        try:
+            with opener.open(req, timeout=120) as r:
+                return r.read().decode('utf-8')
+        except urllib.error.HTTPError as e:
+            if e.code not in (301, 302, 303) or not e.headers.get('Location'):
+                raise
+            req = urllib.request.Request(urllib.parse.urljoin(req.full_url, e.headers['Location']))
+    raise RuntimeError('too many redirects')
 
 
 def main():
@@ -44,12 +66,8 @@ def main():
         cred = json.load(f)
     body = dict(params, key=cred['key'], action=action)
 
-    req = urllib.request.Request(cred['url'], data=json.dumps(body).encode('utf-8'),
-                                 headers={'Content-Type': 'application/json'})
-    # Apps Script answers with a 302; urllib follows it as a GET, which is what it expects.
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            text = r.read().decode('utf-8')
+        text = post(cred['url'], json.dumps(body).encode('utf-8'))
     except Exception as e:
         fail('Request failed: %s. If this is a network/egress error, add script.google.com and '
              'script.googleusercontent.com to the allowed domains.' % e)
