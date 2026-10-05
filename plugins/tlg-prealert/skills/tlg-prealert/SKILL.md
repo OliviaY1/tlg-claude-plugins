@@ -44,6 +44,7 @@ For each MAWB:
 - **First email** = the earliest message for this MAWB. Its received date (in `timezone`) is column `Data`, as `MM/DD`.
 - **Latest data wins**: pieces, weight, ETA, flight, last mile, notes come from the newest message that states them.
 - Note what each follow-up changed: pieces, weight, ETA/flight, MAWB replacement, cancellation, special handling.
+- **Change keywords.** Scan the subject and snippet (the sender's new text, not the quoted older mail) of every message after the first email, and the first email's subject, for: SHORT, PART B (any PART), 更新, 重量, cancel / 取消, 短件 / 少件, 多件, 破损 / damage, and similar wording (拦截, 改为, 以最新为准, revised, updated). Record the keyword and the sentence it is in, e.g. `10/04「提单总件数更新为：208件」`.
 
 ## Step 3: is it in the sheet?
 
@@ -53,13 +54,14 @@ For each MAWB:
 ## Step 4: flags (⚠️)
 
 Flag a shipment when any of these hold:
-1. The MAWB is in the sheet and a follow-up arrived after the first email (data may have changed since the row was entered).
+1. The MAWB is in the sheet and a later message has a change keyword or changes a field (pieces, weight, ETA/flight, last mile, handling). The existing row may need editing. A follow-up that changes nothing (收到, received, DO, 3461, ISC receipt, customs released) is not a flag.
 2. A follow-up asks to replace the MAWB. Report the old MAWB's row and whether the new MAWB is in the sheet.
-3. Cancellation, flight change or piece-count change.
-4. Sources disagree for this shipment (e.g. two different ETAs, weight differs between 预报 and AWB).
-5. `lookup` found the MAWB in more than one row.
+3. The whole shipment is cancelled.
+4. `lookup` found the MAWB in more than one row.
 
-Flags go first in the report. Changing existing rows is rare; make each flag say exactly what to check: tab, row, field, value in the email, which email (sender + date).
+Flags go first in the report. Changing existing rows is rare; make each flag say exactly what to check: tab, row, field, value in the email (quote the keyword sentence), which email (sender + date).
+
+For a MAWB not in the sheet, a keyword or change is not a flag: put the keyword sentence in the list's `最新 follow-up` column. The latest data wins, and Entry mode asks the user when a must-have value is unclear.
 
 ## Check mode: stop here
 
@@ -73,13 +75,15 @@ Report with `reference/report-zh.md` (check sections only). End with the entry c
 4. For each confirmed shipment:
    - `saveAttachments` for every message of that MAWB that has attachments. Files land in the shared folder; `already there` is fine.
    - Read the saved files with Drive `read_file_content` (file id from the response). If it returns empty (new files take a minute to index), wait and retry once, or `download_file_content` and parse locally (`pdftotext`; `pip install openpyxl` for xlsx).
-   - Build the row with `reference/columns.md`. Leave a cell empty when the value is not found. Don't guess.
-5. `getHeaders` for the tab. Map each field to the tab's actual header text (headers differ between tabs). Send all rows in one `appendRows` call.
-6. Report: added rows (row number), skipped (reason), flagged.
+   - Build the row with `reference/columns.md`. Optional fields may stay empty when not found. Don't guess.
+5. **Must-have check.** Every new row needs all of: `Data`, `MAWB`, `客人(client)`, `Location`, `实重Weight (KG)`, `Cargo notes` (with the ETA), `PCs` (other tabs: the matching headers in `reference/columns.md`). If any is missing or you are not sure of it, ask the user before writing that row (❓ in the report: MAWB, field, values found, which email). Not sure means: sources disagree, a follow-up changed it without a clear final value, a keyword (SHORT, PART B, 短件, 多件, 拦截 ...) leaves the count or weight unclear, or the client name is not certain. Ask in both Entry and One-shot mode.
+6. `getHeaders` for the tab. Map each field to the tab's actual header text (headers differ between tabs). Send all rows that passed step 5 in one `appendRows` call. Rows waiting on ❓ answers go in a second `appendRows` call after the user answers.
+7. Report: added rows (row number), ❓ questions, skipped (reason), flagged.
 
 ## Hard rules
 
 - Never call `deleteRows` or `deleteAttachments`. The helper refuses them.
 - Never overwrite or edit existing rows. Report instead.
+- Never write a row with a must-have field empty or guessed. `Cargo notes` (ETA) is never skipped.
 - Write only to a spreadsheet the Sheet API allows; never to the original tracker.
 - Check mode never saves attachments or writes rows, even if asked mid-run; tell the user to run Entry mode.
