@@ -21,8 +21,8 @@ If the request is ambiguous, use Check mode.
 ## Setup per run
 
 1. Read `config.json` (next to this file). These are the only names to use.
-2. Get keys only when a step needs one. Find the folder: `search_files` with `title = '<keyFolder>' and mimeType = 'application/vnd.google-apps.folder'`. Then the file: `title = '<file name>' and parentId = '<folder id>'`. Download it with `download_file_content` (Google Doc: export as `text/plain`). Strip a leading BOM. Save the JSON (after `mkdir -p /tmp/tlg`) to `/tmp/tlg/sheet_key.json` or `/tmp/tlg/attachments_key.json`.
-3. Read no other Drive file in `keyFolder`. Download no file other than the two names in `config.json`.
+2. Get keys only when a step needs one. `search_files` with `title = '<file name>' and parentId = '<keyFolderId>'`. Download it with `download_file_content` (if it is a Google Doc, export as `text/plain`). Strip a leading BOM. Save the JSON (after `mkdir -p /tmp/tlg`) to `/tmp/tlg/sheet_key.json` or `/tmp/tlg/attachments_key.json`.
+3. Look for keys only in the folder `keyFolderId`. Download no file other than the two names in `config.json`.
 4. Call the APIs only through `scripts/tlg_api.py` (see `reference/api.md`). In Check mode always pass `--read-only`.
 
 ## Step 1: find pre-alerts

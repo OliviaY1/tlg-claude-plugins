@@ -47,7 +47,7 @@ const SETTINGS = {
   // The deployment's Web app URL, ending in /exec (Deploy > Manage deployments).
   webAppUrl: '',
   // Where `setup` saves the web app link and key (folder name in My Drive, or a folder ID).
-  assetsFolder: 'assests_for_googlesheet_automation',
+  assetsFolder: '1niXn7QSz51h_KNWvQAAazY1KZU7kApGe', // assests_for_googlesheet_automation (owner air@)
   // Default parent for saved attachments (folder name in My Drive, or a shared folder's ID).
   attachmentsFolder: '1tRwh12d_Z0ouV8nNH_Ebhxsno7CCm5D6', // email_attachments_for_claude (shared, owner air@)
 };
