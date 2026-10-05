@@ -36,7 +36,9 @@ If the request is ambiguous, use Check mode.
 ## Step 1: find pre-alerts
 
 - Days: what the user said ("最近 7 天" → 7), else `defaultDays`.
-- Gmail `search_threads` with `newer_than:<N>d`. Keep a thread when the subject contains RALERT, PRE-ALERT, PREALERT or 预报, or the body has a MAWB (`\d{3}-?\d{8}`). Ignore everything else (system notices, security alerts, Drive shares).
+- Window for the opening sentence: `python3 -c "from zoneinfo import ZoneInfo; from datetime import datetime,timedelta; n=datetime.now(ZoneInfo('America/Chicago')); print((n-timedelta(days=N)).strftime('%m/%d %H:%M'), n.strftime('%m/%d %H:%M'))"` (N = days; `pip install tzdata` if the zone is missing).
+- Mailbox: the `authuser` in any Gmail `viewUrl`. If it is not `mailbox` in `config.json`, tell the user and ask before going on (the Attachment API reads `mailbox`, so message ids would not match).
+- Gmail `search_threads` with `newer_than:<N>d`, every page (`pageSize` 50, follow `nextPageToken`). Keep a thread when the subject contains RALERT, PRE-ALERT, PREALERT or 预报, or the body has a MAWB (`\d{3}-?\d{8}`). Ignore everything else (system notices, security alerts, Drive shares).
 - One shipment = one MAWB. An email with two MAWBs is two shipments. Copies of the same email (forwarded twice, same body) count once.
 
 ## Step 2: follow-ups
@@ -64,6 +66,16 @@ Flag a shipment when any of these hold:
 Flags go first in the report. Changing existing rows is rare; make each flag say exactly what to check: tab, row, field, value in the email (quote the keyword sentence), which email (sender + date).
 
 For a MAWB not in the sheet, a keyword or change is not a flag: put the keyword sentence in the list's `最新 follow-up` column. The latest data wins, and Entry mode asks the user when a must-have value is unclear.
+
+## Opening sentence
+
+Every report starts with one sentence saying what was checked (template in `reference/report-zh.md`). Counts are messages received in the window; skip messages `mailbox` sent itself (label `SENT`).
+- 一共: all messages in the window. Search previews show only about the 5 oldest messages of a thread; when `messageCount` is larger, `get_thread` (`METADATA_ONLY`) to count the rest.
+- 预报相关: messages that belong to a kept MAWB.
+- 原始邮件: the first email of a MAWB, when it falls in the window. Follow-up: every other 预报相关 message.
+- If Step 2 found related messages before the window, add how many.
+- The tab from Step 0 and `spreadsheetName` from `config.json`.
+- Entry / One-shot: also how many rows were added and how many shipments wait on ❓.
 
 ## Check mode: stop here
 
