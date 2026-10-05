@@ -1,0 +1,7 @@
+{
+  "keyFolder": "assests_for_googlesheet_automation",
+  "attachmentsKeyFile": "gmail_attachments_api_key (do not share)",
+  "sheetKeyFile": "sheet_api_key (do not share)",
+  "defaultDays": 3,
+  "timezone": "America/Chicago"
+}
