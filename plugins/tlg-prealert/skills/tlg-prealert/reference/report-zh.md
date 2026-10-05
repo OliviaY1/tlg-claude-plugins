@@ -1,8 +1,10 @@
 # Report template (Chinese)
 
-Section order: ⚠️ → ❓ (Entry / One-shot) → 预报邮件 → 已录入 → 其他信息（未填写） → 未录入 → 附件. Drop a section that has nothing in it. Tables, not paragraphs. No intro, no closing summary.
+Section order: opening sentence → ⚠️ → ❓ (Entry / One-shot) → 预报邮件 → 已录入 → 其他信息（未填写） → 未录入 → 附件. Drop a section that has nothing in it. Tables, not paragraphs. No intro beyond the opening sentence, no closing summary.
 
 ```
+我检查了芝加哥时间 10/04 01:12 到现在（10/05 01:12）air@transleadgroup.com 邮箱收到的邮件，一共 42 封，其中 9 封和预报相关：3 封是预报原始邮件，6 封是 follow-up（另外往前找到 2 封更早的相关邮件，用来确定首封日期）。我查看了「[claude testing] Copy of TLG ORD Shipment Tracker」的「2026. JUN 大贸 空运」tab。
+
 ## ⚠️ 需要人工处理
 | MAWB | 表格位置 | 问题 | 邮件里的最新值 | 依据（发件人，日期） |
 |---|---|---|---|---|
@@ -15,7 +17,7 @@ Section order: ⚠️ → ❓ (Entry / One-shot) → 预报邮件 → 已录入 
 | 180-20716581 | 厦门洪赞成 | 88 | 10/03 | 无 | 没有 |
 ```
 
-Entry / one-shot mode adds:
+Entry / one-shot mode adds to the opening sentence `录入了 2 行，1 票等你确认。` and these sections:
 
 ```
 ## ❓ 需要你确认（确认后再录入）
