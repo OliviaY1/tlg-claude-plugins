@@ -1,0 +1,15 @@
+{
+  "name": "tlg-claude-plugins",
+  "description": "Claude plugins for Transleadgroup (TLG) operations.",
+  "owner": {
+    "name": "Transleadgroup"
+  },
+  "plugins": [
+    {
+      "name": "tlg-prealert",
+      "source": "./plugins/tlg-prealert",
+      "description": "Pre-alert emails (air@) -> TLG ORD Shipment Tracker rows. Check-only or entry mode.",
+      "version": "0.1.0"
+    }
+  ]
+}
