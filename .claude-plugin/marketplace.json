@@ -9,7 +9,7 @@
       "name": "tlg-prealert",
       "source": "./plugins/tlg-prealert",
       "description": "Pre-alert emails (air@) -> TLG ORD Shipment Tracker rows. Check-only or entry mode.",
-      "version": "0.1.2"
+      "version": "0.1.3"
     }
   ]
 }

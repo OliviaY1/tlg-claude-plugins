@@ -60,7 +60,7 @@ const SETTINGS = {
   // Default column that identifies a row (duplicate check on add, safety check on delete).
   keyColumn: 'MAWB',
   // Where `setup` saves the web app link and key (folder name in My Drive, or a folder ID).
-  assetsFolder: 'assests_for_googlesheet_automation',
+  assetsFolder: '1niXn7QSz51h_KNWvQAAazY1KZU7kApGe', // assests_for_googlesheet_automation (owner air@)
 };
 const KEY_FILE = 'sheet_api_key (do not share)';
 
