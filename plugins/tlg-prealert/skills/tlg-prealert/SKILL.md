@@ -75,15 +75,15 @@ Report with `reference/report-zh.md` (check sections only). End with the entry c
 4. For each confirmed shipment:
    - `saveAttachments` for every message of that MAWB that has attachments. Files land in the shared folder; `already there` is fine.
    - Read the saved files with Drive `read_file_content` (file id from the response). If it returns empty (new files take a minute to index), wait and retry once, or `download_file_content` and parse locally (`pdftotext`; `pip install openpyxl` for xlsx).
-   - Build the row with `reference/columns.md`. Optional fields may stay empty when not found. Don't guess.
+   - Build the row with `reference/columns.md`: only the 7 must-have fields. Don't guess. Other values you find (计费重, last mile, ...) go in the report, never in the row.
 5. **Must-have check.** Every new row needs all of: `Data`, `MAWB`, `客人(client)`, `Location`, `实重Weight (KG)`, `Cargo notes` (with the ETA), `PCs` (other tabs: the matching headers in `reference/columns.md`). If any is missing or you are not sure of it, ask the user before writing that row (❓ in the report: MAWB, field, values found, which email). Not sure means: sources disagree, a follow-up changed it without a clear final value, a keyword (SHORT, PART B, 短件, 多件, 拦截 ...) leaves the count or weight unclear, or the client name is not certain. Ask in both Entry and One-shot mode.
 6. `getHeaders` for the tab. Map each field to the tab's actual header text (headers differ between tabs). Send all rows that passed step 5 in one `appendRows` call. Rows waiting on ❓ answers go in a second `appendRows` call after the user answers.
-7. Report: added rows (row number), ❓ questions, skipped (reason), flagged.
+7. Report: added rows (row number), ❓ questions, other values found but not written, skipped (reason), flagged.
 
 ## Hard rules
 
 - Never call `deleteRows` or `deleteAttachments`. The helper refuses them.
 - Never overwrite or edit existing rows. Report instead.
-- Never write a row with a must-have field empty or guessed. `Cargo notes` (ETA) is never skipped.
+- Write only the 7 must-have fields. Never write a row with one of them empty or guessed. `Cargo notes` (ETA) is never skipped.
 - Write only to a spreadsheet the Sheet API allows; never to the original tracker.
 - Check mode never saves attachments or writes rows, even if asked mid-run; tell the user to run Entry mode.

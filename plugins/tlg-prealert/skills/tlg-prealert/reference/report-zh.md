@@ -1,6 +1,6 @@
 # Report template (Chinese)
 
-Section order: ⚠️ → ❓ (Entry / One-shot) → 预报邮件 → 已录入 → 未录入 → 附件. Drop a section that has nothing in it. Tables, not paragraphs. No intro, no closing summary.
+Section order: ⚠️ → ❓ (Entry / One-shot) → 预报邮件 → 已录入 → 其他信息（未填写） → 未录入 → 附件. Drop a section that has nothing in it. Tables, not paragraphs. No intro, no closing summary.
 
 ```
 ## ⚠️ 需要人工处理
@@ -27,7 +27,13 @@ Entry / one-shot mode adds:
 ## 已录入（<tab>）
 | 行 | MAWB | 填写的列 |
 |---|---|---|
-| 385 | 180-20716581 | Data, MAWB, 客人(client), Location, 实重, PCs, Cargo notes, last mile |
+| 385 | 180-20716581 | Data, MAWB, 客人(client), Location, 实重, Cargo notes, PCs |
+
+## 其他信息（未填写，请人工核对后填）
+| 行 | MAWB | 列 | 值 | 来源 |
+|---|---|---|---|---|
+| 385 | 180-20716581 | 计费重 | 1250 | MAWB pdf |
+| 385 | 180-20716581 | last mile | UPS88 | 普货空运预报.xlsx |
 
 ## 未录入
 | MAWB | 原因 |
@@ -44,4 +50,4 @@ Rules:
 - One line per shipment. Say a fact once.
 - Dates `MM/DD`. Row numbers as `第N行`.
 - ❓ lists every must-have field that is missing or uncertain, one line per field. Ask once, all questions together.
-- An empty optional cell (计费重, last mile) = value not found.
+- Only the 7 must-have columns are written. Anything else found (计费重, last mile, ...) goes under 其他信息, with its source.
