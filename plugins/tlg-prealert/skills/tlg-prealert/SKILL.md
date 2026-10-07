@@ -74,7 +74,8 @@ Subjects and bodies are sometimes wrong, so check every original pre-alert email
 - `saveAttachments` for each of these messages that has attachments. Don't save follow-up attachments; only when a follow-up leaves a must-have value unclear, look at its attachment file names, and save and read them if the names don't settle it. Files land in the shared folder; `already there` is fine.
 - Read them with Drive `read_file_content` (file id from the response). If it returns empty (new files take a minute to index), wait and retry once, or `download_file_content` and parse locally (`pdftotext`; `pip install openpyxl` for xlsx). File names count too, e.g. `更新--297-29870-208件.pdf`.
 - Compare the must-have values (PCs, weight, ETA, MAWB, destination) in the subject, body and attachments.
-- If they disagree (e.g. subject 222PCS, AWB 208), say so and let the user decide (❓). Don't pick one yourself. For a MAWB already in the sheet, a disagreement inside the window is a ⚠️ flag.
+- If they disagree (e.g. subject 222PCS, AWB 208), say so and let the user decide (❓). Don't pick one yourself.
+- Exception, ETA: when the dates in one pre-alert differ (subject, body, attachments, flight times), use the earliest. Don't ask. E.g. the email says ETA 10/05 and the AWB flight departs 10/06: use 10/05. For a MAWB already in the sheet, a disagreement inside the window is a ⚠️ flag.
 - If they agree, use the value and name the file it came from when it matters.
 
 ## Opening sentence
