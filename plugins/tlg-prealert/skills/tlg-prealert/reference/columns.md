@@ -14,7 +14,7 @@ Write exactly these 7 fields, all required. If one is missing or uncertain, ask 
 
 Source priority: newest follow-up > `普货空运预报.xlsx` > MAWB/HAWB pdf > invoice / packing list > subject and body.
 
-When sources disagree on one of these fields, check the attachments (SKILL.md Step 5). If the subject and the attachments still disagree (e.g. PCs), ask the user (❓). Never skip the shipment because of it.
+When sources disagree on one of these fields, look at the attachments (SKILL.md Step 5). If the subject, body and attachments disagree (e.g. PCs), ask the user (❓). Never skip the shipment because of it.
 
 ## Report only, never written
 

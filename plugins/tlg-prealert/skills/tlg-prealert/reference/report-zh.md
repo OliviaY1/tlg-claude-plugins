@@ -53,5 +53,6 @@ Rules:
 - Dates `MM/DD`. Row numbers as `第N行`.
 - ❓ lists every must-have field that is missing or uncertain, one line per field. Ask once, all questions together.
 - Shipments already in the sheet with no ⚠️: give the count only, no table, and leave them out of 未录入.
-- ❓ in Check mode too, when Step 5 finds the subject and attachments disagree.
+- ❓ in Check mode too, when Step 5 finds the subject, body and attachments disagree.
+- 附件 section in every mode.
 - Only the 7 must-have columns are written. A 计费重 found goes under 其他信息, with its source. Never mention last mile.
