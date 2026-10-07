@@ -14,7 +14,7 @@ All replies to the user are in Simplified Chinese. Keep MAWB numbers, sheet head
 
 | Mode | Trigger | Writes |
 |---|---|---|
-| Check | "check prealert emails only", "只查预报邮件", "只查/检查预报" | No sheet writes. Saves and reads the attachments of every pre-alert email in the window, to check them. |
+| Check | "check prealert emails only", "只查预报邮件", "只查/检查预报" | No sheet writes. Saves and reads the attachments of every original pre-alert email in the window, to check them. |
 | Entry | "录入", "把预报录到 <tab>", "add pre-alerts to the sheet" | Saves attachments, appends rows after the user approves the list. |
 | One-shot | "one-shot", "一次性", "一次性跑完" | Same as Entry, without stopping for approval. |
 
@@ -70,8 +70,8 @@ For a MAWB not in the sheet, a keyword or change is not a flag: put the keyword 
 
 ## Step 5: check the attachments
 
-Subjects and bodies are sometimes wrong, so check every pre-alert email in the window (originals and follow-ups), in every mode:
-- `saveAttachments` for each of these messages that has attachments. Files land in the shared folder; `already there` is fine.
+Subjects and bodies are sometimes wrong, so check every original pre-alert email (first email of a MAWB) in the window, in every mode:
+- `saveAttachments` for each of these messages that has attachments. Don't save follow-up attachments; only when a follow-up leaves a must-have value unclear, look at its attachment file names, and save and read them if the names don't settle it. Files land in the shared folder; `already there` is fine.
 - Read them with Drive `read_file_content` (file id from the response). If it returns empty (new files take a minute to index), wait and retry once, or `download_file_content` and parse locally (`pdftotext`; `pip install openpyxl` for xlsx). File names count too, e.g. `更新--297-29870-208件.pdf`.
 - Compare the must-have values (PCs, weight, ETA, MAWB, destination) in the subject, body and attachments.
 - If they disagree (e.g. subject 222PCS, AWB 208), say so and let the user decide (❓). Don't pick one yourself. For a MAWB already in the sheet, a disagreement inside the window is a ⚠️ flag.
