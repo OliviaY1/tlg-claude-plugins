@@ -14,7 +14,7 @@ All replies to the user are in Simplified Chinese. Keep MAWB numbers, sheet head
 
 | Mode | Trigger | Writes |
 |---|---|---|
-| Check | "check prealert emails only", "只查预报邮件", "只查/检查预报" | Nothing. No attachment saving, no sheet writes. |
+| Check | "check prealert emails only", "只查预报邮件", "只查/检查预报" | No sheet writes. Saves attachments only for shipments with uncertain data, to check them. |
 | Entry | "录入", "把预报录到 <tab>", "add pre-alerts to the sheet" | Saves attachments, appends rows after the user approves the list. |
 | One-shot | "one-shot", "一次性", "一次性跑完" | Same as Entry, without stopping for approval. |
 
@@ -46,9 +46,10 @@ If the request is ambiguous, use Check mode.
 For each MAWB:
 - Search Gmail for the MAWB with no date limit (`"695-60488912" OR "69560488912"`) and `get_thread` every hit, so replies and separate follow-up emails are included.
 - **First email** = the earliest message for this MAWB. Its received date (in `timezone`) is column `Data`, as `MM/DD`.
-- **Latest data wins**: pieces, weight, ETA, flight, last mile, notes come from the newest message that states them.
-- Note what each follow-up changed: pieces, weight, ETA/flight, MAWB replacement, cancellation, special handling.
-- **Change keywords.** Scan the subject and snippet (the sender's new text, not the quoted older mail) of every message after the first email, and the first email's subject, for: SHORT, PART B (any PART), 更新, 重量, cancel / 取消, 短件 / 少件, 多件, 破损 / damage, and similar wording (拦截, 改为, 以最新为准, revised, updated). Record the keyword and the sentence it is in, e.g. `10/04「提单总件数更新为：208件」`.
+- **Only follow-ups inside the window count.** A change in a follow-up received before the window (e.g. `98 → 96 PCS` on 09/29 when the user asked for the last day) is assumed already handled: don't flag it, don't report it as a change. For a MAWB already in the sheet, use only messages inside the window. For a MAWB not in the sheet yet, build the row from all its messages (nothing has been entered, so the latest data wins).
+- **Latest data wins**: pieces, weight, ETA, flight, notes come from the newest message that states them.
+- Note what each follow-up inside the window changed: pieces, weight, ETA/flight, MAWB replacement, cancellation, special handling.
+- **Change keywords.** Scan the subject and snippet (the sender's new text, not the quoted older mail) of every message inside the window, except the first email's body, for: SHORT, PART B (any PART), 更新, 重量, cancel / 取消, 短件 / 少件, 多件, 破损 / damage, and similar wording (拦截, 改为, 以最新为准, revised, updated). Record the keyword and the sentence it is in, e.g. `10/04「提单总件数更新为：208件」`.
 
 ## Step 3: is it in the sheet?
 
@@ -58,14 +59,22 @@ For each MAWB:
 ## Step 4: flags (⚠️)
 
 Flag a shipment when any of these hold:
-1. The MAWB is in the sheet and a later message has a change keyword or changes a field (pieces, weight, ETA/flight, last mile, handling). The existing row may need editing. A follow-up that changes nothing (收到, received, DO, 3461, ISC receipt, customs released) is not a flag.
+1. The MAWB is in the sheet and a message inside the window has a change keyword or changes a field (pieces, weight, ETA/flight, handling). The existing row may need editing. A follow-up that changes nothing (收到, received, DO, 3461, ISC receipt, customs released) is not a flag.
 2. A follow-up asks to replace the MAWB. Report the old MAWB's row and whether the new MAWB is in the sheet.
 3. The whole shipment is cancelled.
 4. `lookup` found the MAWB in more than one row.
 
 Flags go first in the report. Changing existing rows is rare; make each flag say exactly what to check: tab, row, field, value in the email (quote the keyword sentence), which email (sender + date).
 
-For a MAWB not in the sheet, a keyword or change is not a flag: put the keyword sentence in the list's `最新 follow-up` column. The latest data wins, and Entry mode asks the user when a must-have value is unclear.
+For a MAWB not in the sheet, a keyword or change is not a flag: put the keyword sentence in the list's `最新 follow-up` column. The latest data wins; when a must-have value is unclear, see Step 5.
+
+## Step 5: uncertain data → check the attachments
+
+When a must-have value is unclear (subject, body and follow-ups disagree, or a keyword leaves the count or weight unclear):
+- Look at attachment file names first (`get_thread` lists them, e.g. `更新--297-29870-208件.pdf`).
+- Then save that shipment's attachments (`saveAttachments`) and read them with Drive `read_file_content` (empty: wait and retry once, or `download_file_content` and parse with `pdftotext` / `openpyxl`). Check mode does this too, only for these shipments.
+- If the subject and the attachments disagree (e.g. subject 222PCS, AWB 208), say so and let the user decide (❓). Don't pick one yourself.
+- If the attachments settle it with no conflict, use that value and name the file it came from.
 
 ## Opening sentence
 
@@ -89,9 +98,9 @@ Report with `reference/report-zh.md` (check sections only). End with the entry c
 4. For each confirmed shipment:
    - `saveAttachments` for every message of that MAWB that has attachments. Files land in the shared folder; `already there` is fine.
    - Read the saved files with Drive `read_file_content` (file id from the response). If it returns empty (new files take a minute to index), wait and retry once, or `download_file_content` and parse locally (`pdftotext`; `pip install openpyxl` for xlsx).
-   - Build the row with `reference/columns.md`: only the 7 must-have fields. Don't guess. Other values you find (计费重, last mile, ...) go in the report, never in the row.
-5. **Must-have check.** Every new row needs all of: `Data`, `MAWB`, `客人(client)`, `Location`, `实重Weight (KG)`, `Cargo notes` (with the ETA), `PCs` (other tabs: the matching headers in `reference/columns.md`). If any is missing or you are not sure of it, ask the user before writing that row (❓ in the report: MAWB, field, values found, which email). Not sure means: sources disagree, a follow-up changed it without a clear final value, a keyword (SHORT, PART B, 短件, 多件, 拦截 ...) leaves the count or weight unclear, or the client name is not certain. Ask in both Entry and One-shot mode.
-6. `getHeaders` for the tab. Map each field to the tab's actual header text (headers differ between tabs). Send all rows that passed step 5 in one `appendRows` call. Rows waiting on ❓ answers go in a second `appendRows` call after the user answers.
+   - Build the row with `reference/columns.md`: only the 7 must-have fields. Don't guess. A 计费重 value you find goes in the report, never in the row. Never fill or ask about last mile.
+5. **Must-have check.** Every new row needs all of: `Data`, `MAWB`, `客人(client)`, `Location`, `实重Weight (KG)`, `Cargo notes` (with the ETA), `PCs` (other tabs: the matching headers in `reference/columns.md`). If any is missing or you are not sure of it, ask the user before writing that row (❓ in the report: MAWB, field, values found, which email). Not sure means: sources disagree, a follow-up changed it without a clear final value, a keyword (SHORT, PART B, 短件, 多件, 拦截 ...) leaves the count or weight unclear, or the client name is not certain. Check the attachments first (Step 5). Ask in both Entry and One-shot mode.
+6. `getHeaders` for the tab. Map each field to the tab's actual header text (headers differ between tabs). Send all rows that passed the must-have check in one `appendRows` call. Rows waiting on ❓ answers go in a second `appendRows` call after the user answers.
 7. Report: added rows (row number), ❓ questions, other values found but not written, skipped (reason), flagged.
 
 ## Hard rules
@@ -100,4 +109,5 @@ Report with `reference/report-zh.md` (check sections only). End with the entry c
 - Never overwrite or edit existing rows. Report instead.
 - Write only the 7 must-have fields. Never write a row with one of them empty or guessed. `Cargo notes` (ETA) is never skipped.
 - Write only to a spreadsheet the Sheet API allows; never to the original tracker.
-- Check mode never saves attachments or writes rows, even if asked mid-run; tell the user to run Entry mode.
+- Check mode never writes rows, even if asked mid-run; tell the user to run Entry mode. It saves attachments only for Step 5.
+- Never fill or ask about last mile.

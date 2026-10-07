@@ -1,6 +1,6 @@
 # Building a row
 
-Write exactly these 7 fields, all required. If one is missing or uncertain, ask the user before writing the row (see SKILL.md step 5). `Cargo notes` always has the ETA. Never write any other column; people fill the rest.
+Write exactly these 7 fields, all required. If one is missing or uncertain, ask the user before writing the row (SKILL.md, Entry mode must-have check). `Cargo notes` always has the ETA. Never write any other column; people fill the rest.
 
 | Field | Header in 2026 air tabs | Other tabs' header | Value |
 |---|---|---|---|
@@ -14,17 +14,14 @@ Write exactly these 7 fields, all required. If one is missing or uncertain, ask 
 
 Source priority: newest follow-up > `普货空运预报.xlsx` > MAWB/HAWB pdf > invoice / packing list > subject and body.
 
-When sources disagree on one of these fields, ask the user (❓). Never skip the shipment because of it.
+When sources disagree on one of these fields, check the attachments (SKILL.md Step 5). If the subject and the attachments still disagree (e.g. PCs), ask the user (❓). Never skip the shipment because of it.
 
 ## Report only, never written
 
-If the emails or files show these values, list them in the report (`其他信息（未填写）`) so a person can fill them in:
+If the MAWB/HAWB pdf shows a chargeable weight, list it in the report (`其他信息（未填写）`) so a person can fill in `计费重 chargeable weight (KG)`.
 
-| Header | Value |
-|---|---|
-| `计费重 chargeable weight (KG)` | MAWB/HAWB pdf chargeable weight |
-| `last mile 尾程运输 方式` (other tabs: `尾程运输 方式`, `渠道 Last Mile Info`) | 预报 `尾程运输方式` as written (e.g. `UPS144`), else from the body ("144件为UPS" → `UPS144`) |
+Last mile is never filled, never reported, never asked about.
 
 Example (RALERT-695-60488912-HZC-144PCS-XMN-TPE-ORD-2026.7.7):
 - Written: `Data 07/08 · MAWB 695-60488912 · 客人(client) 厦门洪赞成 · Location ORD · 实重 2798 · Cargo notes 07/08 ETA · PCs 144`
-- Report only: `计费重 2798 · last mile UPS144`
+- Report only: `计费重 2798`
