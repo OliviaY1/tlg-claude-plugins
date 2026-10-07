@@ -9,12 +9,12 @@ Write exactly these 7 fields, all required. If one is missing or uncertain, ask 
 | client | `客人(client)` | `Client`, `客户` | The forwarding agent who sent the pre-alert, not the AWB shipper. Sources: 预报 `客户` column, agent code in subject, signature company. e.g. HZC → 厦门洪赞成, CN-USA Express → CNUSA |
 | location | `Location` | | Destination airport (end of route), e.g. `ORD` |
 | weight | `实重Weight (KG)` | `Weight (KG)` | Gross weight. 预报 `总重量` > MAWB pdf gross weight > packing list G.W. Never net weight. |
-| notes | `Cargo notes` | | `MM/DD ETA` (预报 `预计到达`, else email body), plus short special handling from the email, e.g. `1箱（8件）需要拆箱贴标后交运` |
+| notes | `Cargo notes` | | `MM/DD ETA` (预报 `预计到达`, else email body; when dates differ, the earliest of all candidate dates), plus short special handling from the email, e.g. `1箱（8件）需要拆箱贴标后交运` |
 | pieces | `PCs` | `Total Box Qty` | Total pieces. Subject `144PCS`, 预报 `总件数`, AWB |
 
 Source priority: newest follow-up > `普货空运预报.xlsx` > MAWB/HAWB pdf > invoice / packing list > subject and body.
 
-When sources disagree on one of these fields, look at the attachments (SKILL.md Step 5). If the subject, body and attachments disagree (e.g. PCs), ask the user (❓). Never skip the shipment because of it.
+When sources disagree on one of these fields (except ETA, which takes the earliest date), look at the attachments (SKILL.md Step 5). If the subject, body and attachments disagree (e.g. PCs), ask the user (❓). Never skip the shipment because of it.
 
 ## Report only, never written
 
