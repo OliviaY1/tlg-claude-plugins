@@ -55,7 +55,7 @@ An `updated` item is resent in full, marked `（有新跟进）`.
    - 不要 → `S set <id> rejected --by <name>`.
    - A value for one of the item's must-have fields → `S set <id> corrected --by <name> --value '{"PCs": 141}'`.
    - Unknown id, an item already `done`/`rejected`, an unclear value, or anything else → reply to that sender only, in one line, and change nothing. E.g. `没看懂，请回复：编号 + 确认 / 不要 / 正确的值，如 "3 确认"`, or `3 已由 A 处理`.
-3. Execute confirmed and corrected items now (below).
+3. Execute confirmed and corrected items now (below), and confirmed run items now. Don't wait for the next loop round.
 
 ## Execute
 
@@ -67,4 +67,4 @@ For each `confirmed` / `corrected` item (not run items):
 
 `rejected` items: send the `已处理` line, then `S set <id> done`.
 
-Run items (`mawb` starts with `run:`, e.g. `run:backfill`) are questions about a whole run, not a row. Only 确认 / 不要 apply (no corrected values). Don't append anything for them: tlg-prealert Loop mode carries out a confirmed run item in its next round, then sends the `已处理` line.
+Run items (`mawb` starts with `run:`, e.g. `run:backfill`) are questions about a whole run, not a row. Only 确认 / 不要 apply (no corrected values). Carry out a confirmed run item right away, like an answer in the terminal: `run:backfill` → tlg-prealert One-shot on its `from`–`to` range (Loop mode, First run). Then send the `已处理` line and `S set <id> done`.
