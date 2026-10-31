@@ -1,3 +1,4 @@
 {
-  "stateDir": "~/workspace/tlg-claude/wechat-state"
+  "workspace": "~/workspace/tlg-claude",
+  "stateDir": "{workspace}/wechat-state"
 }
