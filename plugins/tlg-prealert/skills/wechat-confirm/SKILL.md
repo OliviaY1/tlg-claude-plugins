@@ -59,10 +59,12 @@ An `updated` item is resent in full, marked `（有新跟进）`.
 
 ## Execute
 
-For each `confirmed` / `corrected` item:
+For each `confirmed` / `corrected` item (not run items):
 1. tlg-prealert `lookup` the MAWB in the loop tab. Already in the sheet → don't write; mark `done` and say so.
 2. Build the row from `row`, with `value` applied for `corrected`. If a must-have is still missing, ask the recipient who replied; keep the status.
 3. `appendRows` (tlg-prealert, same tab), then `S set <id> done`.
 4. Send every recipient one line: `已处理：3 784-86281904 已录入第412行（件数 137，A 确认）` / `已处理：5 不录入（B）`. Batch several items in one message.
 
 `rejected` items: send the `已处理` line, then `S set <id> done`.
+
+Run items (`mawb` starts with `run:`, e.g. `run:backfill`) are questions about a whole run, not a row. Only 确认 / 不要 apply (no corrected values). Don't append anything for them: tlg-prealert Loop mode carries out a confirmed run item in its next round, then sends the `已处理` line.
