@@ -1,6 +1,6 @@
 {
   "name": "tlg-prealert",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Pre-alert emails (air@) -> TLG ORD Shipment Tracker rows. Check-only or entry mode.",
   "author": {
     "name": "Transleadgroup"

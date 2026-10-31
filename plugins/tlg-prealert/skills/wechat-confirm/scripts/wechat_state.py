@@ -6,7 +6,7 @@ Usage:
   python3 wechat_state.py recipients                # print recipients.json
   python3 wechat_state.py unseen ID [ID ...]        # print the ids not processed yet
   python3 wechat_state.py seen ID [ID ...]          # mark Gmail message ids processed
-  python3 wechat_state.py last-run [--set]          # print (or set to now) the last loop run, epoch seconds
+  python3 wechat_state.py last-run [--set]          # last loop run (epoch) and hours since it, rounded up + 1; --set = now
   python3 wechat_state.py add '<json list>'         # add or update items, see below
   python3 wechat_state.py list [STATUS]             # items, optionally only one status
   python3 wechat_state.py set ID STATUS [--by NAME] [--value '<json>']
@@ -22,6 +22,7 @@ config.json: {workspace}/wechat-state, where {workspace} = $TLG_WORKSPACE if set
 config "workspace" (~/workspace/tlg-claude). Writes are atomic.
 """
 import json
+import math
 import os
 import sys
 import tempfile
@@ -116,7 +117,9 @@ def main(argv):
         if '--set' in args:
             data['last_run'] = int(time.time())
             save('seen.json', data)
-        out({'last_run': data.get('last_run')})
+        last = data.get('last_run')
+        hours = math.ceil((time.time() - last) / 3600) + 1 if last else None
+        out({'last_run': last, 'hours': hours})
 
     elif cmd == 'add':
         state = items()
