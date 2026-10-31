@@ -5,5 +5,6 @@
   "mailbox": "air@transleadgroup.com",
   "spreadsheetName": "[claude testing] Copy of TLG ORD Shipment Tracker",
   "defaultDays": 3,
-  "timezone": "America/Chicago"
+  "timezone": "America/Chicago",
+  "loopTab": "2026. JUN 大贸 空运"
 }
