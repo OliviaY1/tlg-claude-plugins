@@ -17,6 +17,7 @@ All replies to the user are in Simplified Chinese. Keep MAWB numbers, sheet head
 | Check | "check prealert emails only", "只查预报邮件", "只查/检查预报" | No sheet writes. Saves and reads the attachments of every original pre-alert email in the window, to check them. |
 | Entry | "录入", "把预报录到 <tab>", "add pre-alerts to the sheet" | Saves attachments, appends rows after the user approves the list. |
 | One-shot | "one-shot", "一次性", "一次性跑完" | Same as Entry, without stopping for approval. |
+| Loop | `/tlg-prealert:prealert-loop` (every 30 min, Claude Code) | One-shot on emails not processed yet; ❓ go to WeChat. See Loop mode. |
 
 If the request is ambiguous, use Check mode.
 
@@ -112,3 +113,14 @@ Report with `reference/report-zh.md` (check sections only). End with the entry c
 - Write only to a spreadsheet the Sheet API allows; never to the original tracker.
 - Check mode never writes rows, even if asked mid-run; tell the user to run Entry mode. It does save attachments (Step 5).
 - Never fill or ask about last mile.
+
+## Loop mode
+
+Run by `/tlg-prealert:prealert-loop`. One-shot, with these changes. `S` = `python3 <skills folder>/wechat-confirm/scripts/wechat_state.py`.
+
+1. Tab = `loopTab` in `config.json`. Don't ask.
+2. Start: run the wechat-confirm skill's Execute step for `confirmed` / `corrected` items.
+3. Emails: only messages not processed before. Search `after:<S last-run minus 1800>` (first run: `newer_than:<defaultDays>d`), then keep the message ids `S unseen` returns. These messages are the window. None → stop here, no report, no WeChat message.
+4. Steps 1-6 as One-shot, on those messages. Don't ask ❓ in the terminal: hand ❓ shipments and ⚠️ flags to the wechat-confirm skill's Send step. A MAWB with an open wechat-confirm item is written only after a reply.
+5. After the rows are written: `S seen <every message id from step 3>`, then `S last-run --set`. Short terminal report (`reference/report-zh.md`).
+6. No wechat tools (e.g. the web app): skip steps 2 and 4's hand-over; ask ❓ in the terminal as One-shot does.
