@@ -1,7 +1,7 @@
 ---
 name: tlg-prealert
 description: Read air pre-alert emails (RALERT / PRE-ALERT / 预报) in the air@ Gmail and check or enter them in the TLG ORD Shipment Tracker. Check mode is read-only ("check prealert emails only", "只查预报邮件", "只查最近 7 天的预报邮件"). Entry mode adds rows ("把预报录到 2026. JUN 大贸 空运", "录入预报", "one-shot", "一次性跑完").
-allowed-tools: mcp__Gmail__search_threads, mcp__Gmail__get_thread, mcp__Gmail__get_message, mcp__Google_Drive__search_files, mcp__Google_Drive__download_file_content, mcp__Google_Drive__read_file_content, mcp__Google_Drive__get_file_metadata, Bash(python3:*), Bash(pip install:*), Bash(pdftotext:*)
+allowed-tools: mcp__Gmail__search_threads, mcp__Gmail__get_thread, mcp__Gmail__get_message, mcp__Google_Drive__search_files, mcp__Google_Drive__download_file_content, mcp__Google_Drive__read_file_content, mcp__Google_Drive__get_file_metadata, mcp__claude_ai_Gmail__search_threads, mcp__claude_ai_Gmail__get_thread, mcp__claude_ai_Gmail__get_message, mcp__claude_ai_Google_Drive__search_files, mcp__claude_ai_Google_Drive__download_file_content, mcp__claude_ai_Google_Drive__read_file_content, mcp__claude_ai_Google_Drive__get_file_metadata, Bash(python3:*), Bash(pip install:*), Bash(pip3 install:*), Bash(pdftotext:*)
 ---
 
 # TLG pre-alert → tracker
