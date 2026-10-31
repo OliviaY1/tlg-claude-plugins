@@ -18,7 +18,8 @@ Claude's proposal, "fields" = the uncertain field names. An open item (pending/c
 same MAWB is updated in place (status stays, "updated": true) instead of getting a new id.
 
 Statuses: pending -> confirmed | corrected | rejected -> done. Files live in stateDir from
-config.json (default ~/workspace/tlg-claude/wechat-state). Writes are atomic.
+config.json: {workspace}/wechat-state, where {workspace} = $TLG_WORKSPACE if set, else
+config "workspace" (~/workspace/tlg-claude). Writes are atomic.
 """
 import json
 import os
@@ -34,9 +35,12 @@ KEEP_SEEN = 5000
 
 
 def state_dir():
+    """stateDir from config.json; {workspace} = $TLG_WORKSPACE if set, else config "workspace"."""
     with open(os.path.join(HERE, '..', 'config.json'), encoding='utf-8') as f:
         cfg = json.load(f)
-    return os.path.expanduser(cfg.get('stateDir', '~/workspace/tlg-claude/wechat-state'))
+    workspace = os.environ.get('TLG_WORKSPACE') or cfg.get('workspace', '~/workspace/tlg-claude')
+    d = cfg.get('stateDir', '{workspace}/wechat-state').replace('{workspace}', workspace)
+    return os.path.expanduser(d)
 
 
 def path(name):

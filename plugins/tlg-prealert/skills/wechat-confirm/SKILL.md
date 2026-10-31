@@ -8,7 +8,7 @@ allowed-tools: mcp__wechat-a__wechat_reply, mcp__wechat-b__wechat_reply, Bash(py
 
 Works only in Claude Code with the wechat channels loaded (tools `mcp__<server>__wechat_reply`). If those tools are missing, do nothing and say so.
 
-State lives on disk, never only in the conversation. Use only `scripts/wechat_state.py` (`S` below = `python3 <this skill folder>/scripts/wechat_state.py`). Run `S init` once per session.
+State lives on disk, never only in the conversation. Use only `scripts/wechat_state.py` (`S` below = `python3 <this skill folder>/scripts/wechat_state.py`). Run `S init` once per session; it prints the state folder (`$TLG_WORKSPACE/wechat-state`, default `~/workspace/tlg-claude/wechat-state`).
 
 - `recipients.json`: `[{"name": "A", "server": "wechat-a", "id": "...@im.wechat"}]`. Send to every entry with `mcp__<server>__wechat_reply`, `sender_id` = `id`. Never read anything under `.claude/channels/` or `.openclaw/` (bot tokens).
 - `pending.json`: numbered items. Statuses: `pending` → `confirmed` / `corrected` / `rejected` → `done`.
