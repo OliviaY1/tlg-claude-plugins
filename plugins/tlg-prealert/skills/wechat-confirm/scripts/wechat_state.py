@@ -18,7 +18,7 @@ Claude's proposal, "fields" = the uncertain field names. An open item (pending/c
 same MAWB is updated in place (status stays, "updated": true) instead of getting a new id.
 
 Statuses: pending -> confirmed | corrected | rejected -> done. Files live in stateDir from
-config.json (default ~/wechat-reminder). Writes are atomic.
+config.json (default ~/workspace/tlg-claude/wechat-state). Writes are atomic.
 """
 import json
 import os
@@ -36,7 +36,7 @@ KEEP_SEEN = 5000
 def state_dir():
     with open(os.path.join(HERE, '..', 'config.json'), encoding='utf-8') as f:
         cfg = json.load(f)
-    return os.path.expanduser(cfg.get('stateDir', '~/wechat-reminder'))
+    return os.path.expanduser(cfg.get('stateDir', '~/workspace/tlg-claude/wechat-state'))
 
 
 def path(name):
