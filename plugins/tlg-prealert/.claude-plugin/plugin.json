@@ -1,7 +1,7 @@
 {
   "name": "tlg-prealert",
-  "version": "0.3.1",
-  "description": "Pre-alert emails (air@) -> TLG ORD Shipment Tracker rows. Check-only or entry mode.",
+  "version": "0.4.0",
+  "description": "Pre-alert emails (air@) -> TLG ORD Shipment Tracker rows. Check-only or entry mode; WeChat sheet requests (Claude Code).",
   "author": {
     "name": "Transleadgroup"
   }

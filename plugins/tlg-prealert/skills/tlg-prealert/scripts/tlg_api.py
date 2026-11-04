@@ -7,7 +7,8 @@ Usage:
 
 KEYFILE is the key file's JSON ({"url": ".../exec", "key": "..."}) saved locally.
 Prints the API's JSON response. Never prints the key.
-Delete actions are refused. --read-only also refuses every write.
+deleteAttachments is refused. deleteRows takes one row at a time.
+--read-only refuses every write (Check mode).
 """
 import json
 import sys
@@ -20,7 +21,7 @@ READ = {
     'attachments': {'listAttachments'},
 }
 WRITE = {
-    'sheet': {'appendRows'},
+    'sheet': {'appendRows', 'updateCells', 'deleteRows'},
     'attachments': {'saveAttachments'},
 }
 
@@ -57,6 +58,8 @@ def main():
         fail(__doc__.strip())
     api, keyfile, action = args[0], args[1], args[2]
     params = json.loads(args[3]) if len(args) > 3 else {}
+    if action == 'deleteRows' and len(params.get('rows') or []) != 1:
+        fail('deleteRows takes exactly one row per call.')
 
     allowed = READ[api] | (set() if read_only else WRITE[api])
     if action not in allowed:

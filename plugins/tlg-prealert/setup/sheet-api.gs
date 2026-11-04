@@ -1,7 +1,7 @@
 /**
  * Sheet API (Google Apps Script, standalone project in the work account).
  *
- * A small, private web API Claude calls to read, add and delete rows in Google Sheets.
+ * A small, private web API Claude calls to read, add, edit and delete rows in Google Sheets.
  * It works on any spreadsheet the account can edit, but only on those listed in
  * SETTINGS.allowedSheets. It runs only when called: no schedule, no Gmail, no attachments.
  *
@@ -13,13 +13,20 @@
  *     -> {"headers": [{"column": "C", "name": "MAWB"}, ...]}
  *   {"key", "action": "readRows",    "spreadsheet", "tab", "match": {"MAWB": "695-60488912"}}
  *   {"key", "action": "readRows",    "spreadsheet", "tab", "lastN": 20}
+ *   {"key", "action": "readRows",    "spreadsheet", "tab", "row": 357}
+ *   {"key", "action": "readRows",    "spreadsheet", "tab", "lastN": 3000, "columns": ["MAWB", "客人(client)"]}
  *     -> {"headers": [...], "rows": [{"row": 357, "values": {"MAWB": "...", ...}}]}
  *   {"key", "action": "lookup",      "spreadsheet", "tab" or "tabs": [...], "keys": ["695-60488912", ...]}
  *     -> {"results": [{"key": "695-60488912", "found": [{"tab": "...", "row": 357}]}, {"key": "...", "found": []}]}
  *   {"key", "action": "appendRows",  "spreadsheet", "tab", "rows": [{"MAWB": "695-60488912", "PCs": 144}]}
  *     -> {"results": [{"key": "...", "addedRow": 385} | {"key": "...", "skipped": "already in the tab"}]}
+ *   {"key", "action": "updateCells", "spreadsheet", "tab", "updates": [
+ *       {"row": 357, "MAWB": "695-60488912", "column": "PCs", "old": "144", "value": 140},
+ *       {"row": 357, "MAWB": "695-60488912", "column": "Cargo notes", "appendLine": "11/05 ETA 08:20"}]}
+ *     -> {"results": [{"row": 357, "column": "PCs", "updated": true, "old": "144", "value": "140"}
+ *                    | {"row": 357, "column": "PCs", "skipped": "...", "current": "142"}]}
  *   {"key", "action": "deleteRows",  "spreadsheet", "tab", "rows": [{"row": 385, "MAWB": "695-60488912"}]}
- *     -> {"results": [{"row": 385, "deleted": true} | {"row": 385, "skipped": "..."}]}
+ *     -> {"results": [{"row": 385, "deleted": true, "values": {...}} | {"row": 385, "skipped": "..."}]}
  *
  * Optional on every tab action: "headerRow" (default 1) and "keyColumn" (default
  * SETTINGS.keyColumn, "MAWB"), the column that identifies a row.
@@ -36,8 +43,12 @@
  *   - Only spreadsheets in SETTINGS.allowedSheets can be opened.
  *   - appendRows writes below the last row that has a value in the key column, never
  *     overwrites a filled cell, and skips a row whose key is already in the tab.
- *   - deleteRows deletes a row only if every value sent with it (other than "row") still
- *     matches that row, and at least one value must be sent.
+ *   - updateCells changes only the columns in SETTINGS.editableColumns, only in a row whose key
+ *     (MAWB) still matches, and only if the cell still holds "old" (send "" for an empty cell).
+ *     Columns in SETTINGS.appendOnlyColumns are never overwritten: "appendLine" adds a new line.
+ *     A cell is never set to empty, and a new MAWB already in the tab is refused.
+ *   - deleteRows deletes one row per call, only if its key (MAWB) and every other value sent
+ *     with it still match that row. It returns the deleted row's values so it can be restored.
  *
  * One-time setup (signed in to the work account):
  *   1. script.google.com > New project. Paste this file. In Project Settings tick
@@ -57,8 +68,12 @@ const SETTINGS = {
   allowedSheets: [
     '1jHcrcp9pi_VGmbHER3wDuPCWbuaQNLBQ7F4hE3NI-IM', // [claude testing] Copy of TLG ORD Shipment Tracker (owner air@)
   ],
-  // Default column that identifies a row (duplicate check on add, safety check on delete).
+  // Default column that identifies a row (duplicate check on add, safety check on edit/delete).
   keyColumn: 'MAWB',
+  // The only columns updateCells may change (header text, any tab's spelling).
+  editableColumns: ['PCs', 'Total Box Qty', '实重Weight (KG)', 'Weight (KG)', 'Cargo notes', 'Location', 'MAWB'],
+  // Of those, columns that only take a new line (appendLine), never an overwrite.
+  appendOnlyColumns: ['Cargo notes'],
   // Where `setup` saves the web app link and key (folder name in My Drive, or a folder ID).
   assetsFolder: '1niXn7QSz51h_KNWvQAAazY1KZU7kApGe', // assests_for_googlesheet_automation (owner air@)
 };
@@ -90,6 +105,7 @@ function doPost(e) {
     if (req.action === 'getHeaders') return out({ ok: true, ...getHeaders(tab) });
     if (req.action === 'readRows') return out({ ok: true, ...readRows(tab, req) });
     if (req.action === 'appendRows') return out({ ok: true, results: appendRows(tab, req) });
+    if (req.action === 'updateCells') return out({ ok: true, results: updateCells(tab, req) });
     if (req.action === 'deleteRows') return out({ ok: true, results: deleteRows(tab, req) });
     return out({ ok: false, error: 'Unknown action.' });
   } catch (err) {
@@ -110,7 +126,8 @@ function getHeaders(t) {
   return { headerRow: t.headerRow, headers: t.labels.map((name, i) => ({ column: columnLetter(i + 1), name: name })) };
 }
 
-// Rows matching every field in req.match, or the last req.lastN filled rows (default 20).
+// Rows matching every field in req.match, row number req.row, or the last req.lastN filled rows (default 20).
+// req.columns limits the values returned to those headers.
 function readRows(t, req) {
   const values = t.sheet.getDataRange().getDisplayValues();
   let rows = values.slice(t.headerRow).map((r, i) => ({ row: t.headerRow + 1 + i, cells: r }))
@@ -118,14 +135,20 @@ function readRows(t, req) {
   if (req.match) {
     const tests = Object.keys(req.match).map(name => [t.col(name) - 1, normalize(req.match[name])]);
     rows = rows.filter(r => tests.every(([c, v]) => normalize(r.cells[c]) === v));
+  } else if (req.row) {
+    rows = rows.filter(r => r.row === Number(req.row));
   } else {
     rows = rows.slice(-(req.lastN || 20));
   }
+  const only = req.columns ? req.columns.map(name => t.col(name) - 1) : null;
   return {
     headers: t.labels,
     rows: rows.map(r => {
       const obj = {};
-      t.labels.forEach((l, i) => { if (r.cells[i] !== undefined && r.cells[i] !== '') obj[l] = r.cells[i]; });
+      t.labels.forEach((l, i) => {
+        if (only && only.indexOf(i) < 0) return;
+        if (r.cells[i] !== undefined && r.cells[i] !== '') obj[l] = r.cells[i];
+      });
       return { row: r.row, values: obj };
     }),
   };
@@ -187,23 +210,74 @@ function appendRows(t, req) {
   });
 }
 
-function deleteRows(t, req) {
-  if (!req.rows || !req.rows.length) throw new Error('Request needs "rows".');
-  // Delete from the bottom up so earlier deletions don't shift later row numbers.
-  return req.rows.slice().sort((a, b) => b.row - a.row).map(r => {
-    const checks = Object.keys(r).filter(name => name !== 'row');
-    if (!r.row || r.row <= t.headerRow || !checks.length) {
-      return { row: r.row, skipped: 'needs a row number below the header and at least one value to check, such as its MAWB' };
-    }
-    for (const name of checks) {
-      const actual = t.sheet.getRange(r.row, t.col(name)).getDisplayValue();
-      if (normalize(actual) !== normalize(r[name])) {
-        return { row: r.row, skipped: name + ' in that row is "' + actual + '", not "' + r[name] + '"' };
+// Change single cells of existing rows. Each update is checked on its own; one that fails
+// is skipped with the reason and the cell's current value, the others still run.
+function updateCells(t, req) {
+  if (!req.updates || !req.updates.length) throw new Error('Request needs "updates".');
+  const keyName = req.keyColumn || SETTINGS.keyColumn;
+  const keyCol = t.col(keyName);
+  const editable = SETTINGS.editableColumns.map(headerKey);
+  const appendOnly = SETTINGS.appendOnlyColumns.map(headerKey);
+  return req.updates.map(u => {
+    const res = { row: u.row, column: u.column };
+    const skip = (why, current) => Object.assign(res, { skipped: why }, current === undefined ? {} : { current: current });
+    try {
+      if (!u.row || u.row <= t.headerRow) return skip('needs a row number below the header');
+      if (u.row > t.sheet.getLastRow()) return skip('row ' + u.row + ' is empty');
+      const base = headerKey(t.headers[t.col(u.column) - 1]);
+      if (editable.indexOf(base) < 0) {
+        return skip('column "' + u.column + '" may not be edited');
       }
+      const rowKey = t.sheet.getRange(u.row, keyCol).getDisplayValue();
+      if (!u[keyName] || normalize(rowKey) !== normalize(u[keyName])) {
+        return skip(keyName + ' in row ' + u.row + ' is "' + rowKey + '", not "' + (u[keyName] || '') + '"');
+      }
+      const cell = t.sheet.getRange(u.row, t.col(u.column));
+      const current = cell.getDisplayValue();
+      const isAppendOnly = appendOnly.indexOf(base) >= 0;
+      let value;
+      if (u.appendLine !== undefined) {
+        const line = String(u.appendLine).trim();
+        if (!line) return skip('appendLine is empty');
+        value = current.trim() ? current.replace(/\s+$/, '') + '\n' + line : line;
+      } else {
+        if (isAppendOnly) return skip('column "' + u.column + '" only takes appendLine, never an overwrite', current);
+        if (u.old === undefined) return skip('needs "old", the value the cell holds now ("" if empty)', current);
+        if (normalize(current) !== normalize(u.old)) return skip('cell holds "' + current + '", not "' + u.old + '"', current);
+        if (u.value === undefined || u.value === null || String(u.value).trim() === '') return skip('new value is empty', current);
+        value = u.value;
+        if (t.col(u.column) === keyCol) {
+          const keys = t.sheet.getRange(1, keyCol, t.sheet.getLastRow(), 1).getDisplayValues().map(r => normalize(r[0]));
+          if (keys.indexOf(normalize(value)) >= 0) return skip(keyName + ' ' + value + ' is already in the tab', current);
+        }
+      }
+      cell.setValue(value);
+      return Object.assign(res, { updated: true, old: current, value: cell.getDisplayValue() });
+    } catch (err) {
+      return skip(err.message);
     }
-    t.sheet.deleteRow(r.row);
-    return { row: r.row, deleted: true };
   });
+}
+
+// Delete one row, after checking its key (MAWB) and any other values sent with it.
+function deleteRows(t, req) {
+  if (!req.rows || req.rows.length !== 1) throw new Error('deleteRows takes exactly one row per call.');
+  const keyName = req.keyColumn || SETTINGS.keyColumn;
+  const r = req.rows[0];
+  if (!r.row || r.row <= t.headerRow || r.row > t.sheet.getLastRow() || !r[keyName]) {
+    return [{ row: r.row, skipped: 'needs a filled row number below the header and its ' + keyName }];
+  }
+  for (const name of Object.keys(r).filter(name => name !== 'row')) {
+    const actual = t.sheet.getRange(r.row, t.col(name)).getDisplayValue();
+    if (normalize(actual) !== normalize(r[name])) {
+      return [{ row: r.row, skipped: name + ' in that row is "' + actual + '", not "' + r[name] + '"' }];
+    }
+  }
+  const cells = t.sheet.getRange(r.row, 1, 1, t.labels.length).getDisplayValues()[0];
+  const values = {};
+  t.labels.forEach((l, i) => { if (cells[i] !== '') values[l] = cells[i]; });
+  t.sheet.deleteRow(r.row);
+  return [{ row: r.row, deleted: true, values: values }];
 }
 
 // ---------- helpers ----------
@@ -233,7 +307,7 @@ function openTab(ss, req) {
   const clean = headers.map(h => String(h).replace(/\s+/g, ' ').trim());
   const labels = clean.map((h, i) => !h ? columnLetter(i + 1)
     : clean.filter(x => headerKey(x) === headerKey(h)).length > 1 ? h + ' (' + columnLetter(i + 1) + ')' : h);
-  return { sheet: sheet, headerRow: headerRow, labels: labels, col: name => resolveColumn(headers, name) };
+  return { sheet: sheet, headerRow: headerRow, headers: clean, labels: labels, col: name => resolveColumn(headers, name) };
 }
 
 // A header name, or a column letter: "C", or a label like "Note (AA)" from readRows.
