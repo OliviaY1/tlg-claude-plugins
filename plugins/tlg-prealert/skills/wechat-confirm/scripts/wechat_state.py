@@ -12,10 +12,20 @@ Usage:
   python3 wechat_state.py set ID STATUS [--by NAME] [--value '<json>']
   python3 wechat_state.py sent ID [ID ...] [--reminder]
   python3 wechat_state.py due                       # pending items last sent 24h+ ago
+  python3 wechat_state.py log '<json>'              # record a sheet change, print its change id
+  python3 wechat_state.py changes [ID]              # last 20 changes, or one
+  python3 wechat_state.py budget NAME               # messages NAME's bot may still send now
+  python3 wechat_state.py msg NAME [N]              # record N (default 1) messages sent to NAME
 
-add: each item is {"mawb", "content", "row", "fields"}; "row" = the 7 must-have values with
-Claude's proposal, "fields" = the uncertain field names. An open item (pending/confirmed) for the
-same MAWB is updated in place (status stays, "updated": true) instead of getting a new id.
+add: each item is {"kind", "mawb", "content", "row", "fields"}. kind: "row" (new MAWB, the
+default), "edit" (change cells), "delete" (delete a row), "run" (mawb starts with "run:").
+"row" = the proposal (row: the 7 must-have values; edit: the updateCells updates; delete: the
+deleteRows row), "fields" = the uncertain field names. An open item of the same kind for the same
+MAWB is updated in place (status stays, "updated": true) instead of getting a new id.
+
+log: {"by", "source", "action": "add"|"edit"|"delete"|"restore", "tab", "row", "mawb",
+"changes": [{"column", "old", "value"}], "values": {...}} ("values" = the whole row, for add and
+delete). changes.json keeps the last 2000.
 
 Statuses: pending -> confirmed | corrected | rejected -> done. Files live in stateDir from
 config.json: {workspace}/wechat-state, where {workspace} = $TLG_WORKSPACE if set, else
@@ -33,6 +43,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OPEN = {'pending', 'confirmed', 'corrected'}
 REMIND_AFTER = 24 * 3600
 KEEP_SEEN = 5000
+KEEP_CHANGES = 2000
+MSG_LIMIT, MSG_WINDOW = 7, 300  # about 7 messages per bot per 5 minutes
 
 
 def state_dir():
@@ -75,6 +87,10 @@ def out(data):
 
 def items():
     return load('pending.json', {'next_id': 1, 'items': []})
+
+
+def kind_of(it):
+    return it.get('kind') or ('run' if str(it.get('mawb', '')).startswith('run:') else 'row')
 
 
 def find(state, item_id):
@@ -126,22 +142,24 @@ def main(argv):
         result = []
         for new in json.loads(args[0]):
             old = next((it for it in state['items']
-                        if it['mawb'] == new['mawb'] and it['status'] in OPEN), None)
+                        if it['mawb'] == new['mawb'] and kind_of(it) == kind_of(new)
+                        and it['status'] in OPEN), None)
             if old:
                 changed = (old['content'], old.get('row')) != (new['content'], new.get('row'))
                 if changed:
                     old.update(content=new['content'], row=new.get('row'),
                                fields=new.get('fields', []), updated=True, updated_at=now_iso())
-                result.append({'id': old['id'], 'mawb': old['mawb'],
+                result.append({'id': old['id'], 'kind': kind_of(old), 'mawb': old['mawb'],
                                'result': 'updated' if changed else 'unchanged'})
                 continue
-            it = {'id': state['next_id'], 'mawb': new['mawb'], 'content': new['content'],
+            it = {'id': state['next_id'], 'kind': kind_of(new), 'mawb': new['mawb'],
+                  'content': new['content'],
                   'row': new.get('row'), 'fields': new.get('fields', []),
                   'sent_to': [], 'status': 'pending', 'confirmed_by': None, 'value': None,
                   'created_at': now_iso(), 'last_sent': None, 'updated': False}
             state['next_id'] += 1
             state['items'].append(it)
-            result.append({'id': it['id'], 'mawb': it['mawb'], 'result': 'new'})
+            result.append({'id': it['id'], 'kind': it['kind'], 'mawb': it['mawb'], 'result': 'new'})
         save('pending.json', state)
         out(result)
 
@@ -180,6 +198,36 @@ def main(argv):
         cutoff = time.time() - REMIND_AFTER
         out([it for it in items()['items']
              if it['status'] == 'pending' and it['last_sent'] and it['last_sent'] < cutoff])
+
+    elif cmd == 'log':
+        data = load('changes.json', {'next_id': 1, 'changes': []})
+        entry = dict(json.loads(args[0]), id=data['next_id'], at=now_iso())
+        data['next_id'] += 1
+        data['changes'] = (data['changes'] + [entry])[-KEEP_CHANGES:]
+        save('changes.json', data)
+        out({'ok': True, 'id': entry['id']})
+
+    elif cmd == 'changes':
+        data = load('changes.json', {'next_id': 1, 'changes': []})
+        if args:
+            hit = [c for c in data['changes'] if c['id'] == int(args[0])]
+            if not hit:
+                sys.exit('no change %s' % args[0])
+            out(hit[0])
+        else:
+            out(data['changes'][-20:])
+
+    elif cmd in ('budget', 'msg'):
+        if not args:
+            sys.exit(__doc__)
+        data = load('sends.json', {})
+        cutoff = time.time() - MSG_WINDOW
+        times = [t for t in data.get(args[0], []) if t > cutoff]
+        if cmd == 'msg':
+            times += [int(time.time())] * (int(args[1]) if len(args) > 1 else 1)
+            data[args[0]] = times
+            save('sends.json', data)
+        out({'name': args[0], 'sent_last_5min': len(times), 'left': max(0, MSG_LIMIT - len(times))})
 
     else:
         sys.exit(__doc__)

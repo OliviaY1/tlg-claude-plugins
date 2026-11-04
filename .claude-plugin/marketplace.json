@@ -8,8 +8,8 @@
     {
       "name": "tlg-prealert",
       "source": "./plugins/tlg-prealert",
-      "description": "Pre-alert emails (air@) -> TLG ORD Shipment Tracker rows. Check-only or entry mode.",
-      "version": "0.3.1"
+      "description": "Pre-alert emails (air@) -> TLG ORD Shipment Tracker rows. Check-only or entry mode; WeChat sheet requests (Claude Code).",
+      "version": "0.4.0"
     }
   ]
 }

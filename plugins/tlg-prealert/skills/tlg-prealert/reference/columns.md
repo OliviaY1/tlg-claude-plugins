@@ -16,6 +16,18 @@ Source priority: newest follow-up > `普货空运预报.xlsx` > MAWB/HAWB pdf > 
 
 When sources disagree on one of these fields (except ETA, which takes the earliest date), look at the attachments (SKILL.md Step 5). If the subject, body and attachments disagree (e.g. PCs), ask the user (❓). Never skip the shipment because of it.
 
+## Changing an existing row
+
+Only when certain (SKILL.md Step 4), and only these columns:
+
+| Field | How |
+|---|---|
+| `PCs`, `实重Weight (KG)`, `Location` | `updateCells` with `old` (the value read just before) and the new `value` |
+| `Cargo notes` | `appendLine` only: a new line `MM/DD ETA HH:MM <short note>`, e.g. the cell `10/07 ETA 16:30 partA15` gets the line `10/08 ETA 20:45 partB137`. Never overwrite. |
+| `MAWB` | `updateCells`, only for a stated MAWB replacement; the new MAWB must not be in the tab |
+
+`客人(client)`, `Data` and every other column are never changed. A row is deleted only for an exact duplicate (all 7 values equal; delete the higher row number) or when a person says so.
+
 ## Report only, never written
 
 If the MAWB/HAWB pdf shows a chargeable weight, list it in the report (`其他信息（未填写）`) so a person can fill in `计费重 chargeable weight (KG)`.
