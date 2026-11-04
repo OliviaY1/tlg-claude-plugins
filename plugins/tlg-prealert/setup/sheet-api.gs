@@ -164,8 +164,8 @@ function lookup(ss, req) {
   tabs.forEach(name => {
     let t, keyCol;
     try {
-        t = openTab(ss, { tab: name, headerRow: req.headerRow });
-        keyCol = t.col(req.keyColumn || SETTINGS.keyColumn);
+          t = openTab(ss, { tab: name, headerRow: req.headerRow });
+          keyCol = t.col(req.keyColumn || SETTINGS.keyColumn);
     } catch (err) {
       skippedTabs.push({ tab: name, reason: err.message });
       return;
@@ -224,7 +224,7 @@ function updateCells(t, req) {
     try {
     if (!u.row || u.row <= t.headerRow) return skip('needs a row number below the header');
     if (u.row > t.sheet.getLastRow()) return skip('row ' + u.row + ' is empty');
-    const base = headerKey(String(t.labels[t.col(u.column) - 1] || u.column).replace(/ \([A-Z]{1,2}\)$/, ''));
+    const base = headerKey(t.headers[t.col(u.column) - 1]);
     if (editable.indexOf(base) < 0) {
       return skip('column "' + u.column + '" may not be edited');
     }
@@ -307,7 +307,7 @@ function openTab(ss, req) {
   const clean = headers.map(h => String(h).replace(/\s+/g, ' ').trim());
   const labels = clean.map((h, i) => !h ? columnLetter(i + 1)
     : clean.filter(x => headerKey(x) === headerKey(h)).length > 1 ? h + ' (' + columnLetter(i + 1) + ')' : h);
-  return { sheet: sheet, headerRow: headerRow, labels: labels, col: name => resolveColumn(headers, name) };
+  return { sheet: sheet, headerRow: headerRow, headers: clean, labels: labels, col: name => resolveColumn(headers, name) };
 }
 
 // A header name, or a column letter: "C", or a label like "Note (AA)" from readRows.
