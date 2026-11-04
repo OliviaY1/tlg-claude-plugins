@@ -164,8 +164,8 @@ function lookup(ss, req) {
   tabs.forEach(name => {
     let t, keyCol;
     try {
-          t = openTab(ss, { tab: name, headerRow: req.headerRow });
-          keyCol = t.col(req.keyColumn || SETTINGS.keyColumn);
+      t = openTab(ss, { tab: name, headerRow: req.headerRow });
+      keyCol = t.col(req.keyColumn || SETTINGS.keyColumn);
     } catch (err) {
       skippedTabs.push({ tab: name, reason: err.message });
       return;
@@ -222,37 +222,37 @@ function updateCells(t, req) {
     const res = { row: u.row, column: u.column };
     const skip = (why, current) => Object.assign(res, { skipped: why }, current === undefined ? {} : { current: current });
     try {
-    if (!u.row || u.row <= t.headerRow) return skip('needs a row number below the header');
-    if (u.row > t.sheet.getLastRow()) return skip('row ' + u.row + ' is empty');
-    const base = headerKey(t.headers[t.col(u.column) - 1]);
-    if (editable.indexOf(base) < 0) {
-      return skip('column "' + u.column + '" may not be edited');
-    }
-    const rowKey = t.sheet.getRange(u.row, keyCol).getDisplayValue();
-    if (!u[keyName] || normalize(rowKey) !== normalize(u[keyName])) {
-      return skip(keyName + ' in row ' + u.row + ' is "' + rowKey + '", not "' + (u[keyName] || '') + '"');
-    }
-    const cell = t.sheet.getRange(u.row, t.col(u.column));
-    const current = cell.getDisplayValue();
-    const isAppendOnly = appendOnly.indexOf(base) >= 0;
-    let value;
-    if (u.appendLine !== undefined) {
-      const line = String(u.appendLine).trim();
-      if (!line) return skip('appendLine is empty');
-      value = current.trim() ? current.replace(/\s+$/, '') + '\n' + line : line;
-    } else {
-      if (isAppendOnly) return skip('column "' + u.column + '" only takes appendLine, never an overwrite', current);
-      if (u.old === undefined) return skip('needs "old", the value the cell holds now ("" if empty)', current);
-      if (normalize(current) !== normalize(u.old)) return skip('cell holds "' + current + '", not "' + u.old + '"', current);
-      if (u.value === undefined || u.value === null || String(u.value).trim() === '') return skip('new value is empty', current);
-      value = u.value;
-      if (t.col(u.column) === keyCol) {
-        const keys = t.sheet.getRange(1, keyCol, t.sheet.getLastRow(), 1).getDisplayValues().map(r => normalize(r[0]));
-        if (keys.indexOf(normalize(value)) >= 0) return skip(keyName + ' ' + value + ' is already in the tab', current);
+      if (!u.row || u.row <= t.headerRow) return skip('needs a row number below the header');
+      if (u.row > t.sheet.getLastRow()) return skip('row ' + u.row + ' is empty');
+      const base = headerKey(t.headers[t.col(u.column) - 1]);
+      if (editable.indexOf(base) < 0) {
+        return skip('column "' + u.column + '" may not be edited');
       }
-    }
-    cell.setValue(value);
-    return Object.assign(res, { updated: true, old: current, value: cell.getDisplayValue() });
+      const rowKey = t.sheet.getRange(u.row, keyCol).getDisplayValue();
+      if (!u[keyName] || normalize(rowKey) !== normalize(u[keyName])) {
+        return skip(keyName + ' in row ' + u.row + ' is "' + rowKey + '", not "' + (u[keyName] || '') + '"');
+      }
+      const cell = t.sheet.getRange(u.row, t.col(u.column));
+      const current = cell.getDisplayValue();
+      const isAppendOnly = appendOnly.indexOf(base) >= 0;
+      let value;
+      if (u.appendLine !== undefined) {
+        const line = String(u.appendLine).trim();
+        if (!line) return skip('appendLine is empty');
+        value = current.trim() ? current.replace(/\s+$/, '') + '\n' + line : line;
+      } else {
+        if (isAppendOnly) return skip('column "' + u.column + '" only takes appendLine, never an overwrite', current);
+        if (u.old === undefined) return skip('needs "old", the value the cell holds now ("" if empty)', current);
+        if (normalize(current) !== normalize(u.old)) return skip('cell holds "' + current + '", not "' + u.old + '"', current);
+        if (u.value === undefined || u.value === null || String(u.value).trim() === '') return skip('new value is empty', current);
+        value = u.value;
+        if (t.col(u.column) === keyCol) {
+          const keys = t.sheet.getRange(1, keyCol, t.sheet.getLastRow(), 1).getDisplayValues().map(r => normalize(r[0]));
+          if (keys.indexOf(normalize(value)) >= 0) return skip(keyName + ' ' + value + ' is already in the tab', current);
+        }
+      }
+      cell.setValue(value);
+      return Object.assign(res, { updated: true, old: current, value: cell.getDisplayValue() });
     } catch (err) {
       return skip(err.message);
     }
